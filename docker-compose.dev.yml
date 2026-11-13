@@ -17,6 +17,11 @@ services:
   merge-api:
     volumes:
       - ./app:/srv/app:ro
+      - ./examples:/examples:ro
+      # Auto-reload restarts the process often; the named merge-data volume
+      # from the base file keeps samples and the matrix across those restarts.
+    environment:
+      DATA_DIR: /data
     command:
       - uvicorn
       - app.main:app

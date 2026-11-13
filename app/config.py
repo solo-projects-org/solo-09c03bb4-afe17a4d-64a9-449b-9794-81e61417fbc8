@@ -22,6 +22,12 @@ DEFAULTS = {
     "per_run_concurrency": 8,
     # Finished batches kept in memory (oldest finished evicted first).
     "max_retained_runs": 1000,
+    # Sample/matrix store (data volume). Left empty, a temporary directory is
+    # used, which is convenient for tests but not durable.
+    "data_dir": "",
+    # Debounce for matrix rebuilds: corrections arriving in quick succession
+    # share one rebuild instead of rebuilding once per upload.
+    "matrix_rebuild_debounce_seconds": 0.05,
 }
 
 
@@ -48,6 +54,8 @@ class Settings:
     max_rows: int
     per_run_concurrency: int
     max_retained_runs: int
+    data_dir: str = ""
+    matrix_rebuild_debounce_seconds: float = 0.05
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -68,6 +76,11 @@ class Settings:
                 "PER_RUN_CONCURRENCY", d["per_run_concurrency"]
             ),
             max_retained_runs=_int("MAX_RETAINED_RUNS", d["max_retained_runs"]),
+            data_dir=os.environ.get("DATA_DIR", d["data_dir"]),
+            matrix_rebuild_debounce_seconds=_float(
+                "MATRIX_REBUILD_DEBOUNCE_SECONDS",
+                d["matrix_rebuild_debounce_seconds"],
+            ),
         )
 
 

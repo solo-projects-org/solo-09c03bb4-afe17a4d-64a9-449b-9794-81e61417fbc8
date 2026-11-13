@@ -35,6 +35,12 @@ services:
       PER_RUN_CONCURRENCY: "${PER_RUN_CONCURRENCY:-8}"
       MAX_UPLOAD_BYTES: "${MAX_UPLOAD_BYTES:-33554432}"
       MAX_RETAINED_RUNS: "${MAX_RETAINED_RUNS:-1000}"
+      # Samples and the published count matrix live here; the volume keeps
+      # them across restarts and container recreation.
+      DATA_DIR: /data
+      MATRIX_REBUILD_DEBOUNCE_SECONDS: "${MATRIX_REBUILD_DEBOUNCE_SECONDS:-0.05}"
+    volumes:
+      - merge-data:/data
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
@@ -49,3 +55,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+
+volumes:
+  merge-data:

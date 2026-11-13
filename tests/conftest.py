@@ -31,9 +31,13 @@ async def api(source):
 
 
 @pytest.fixture(autouse=True)
-def _test_settings(monkeypatch):
+def _test_settings(monkeypatch, tmp_path):
     monkeypatch.setattr(SETTINGS, "per_run_concurrency", 8)
     monkeypatch.setattr(SETTINGS, "max_retained_runs", 1000)
+    # Every test gets its own data volume so samples/matrix state cannot leak
+    # between tests (the app picks it up when its lifespan starts).
+    monkeypatch.setattr(SETTINGS, "data_dir", str(tmp_path / "data"))
+    monkeypatch.setattr(SETTINGS, "matrix_rebuild_debounce_seconds", 0.0)
     yield
 
 
