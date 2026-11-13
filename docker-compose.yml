@@ -1,0 +1,51 @@
+name: expression-merge
+
+services:
+  annotation-source:
+    build:
+      context: .
+      dockerfile: annotation_source/Dockerfile
+    environment:
+      # Slow upstream on purpose: one annotation answer takes ~1s, which makes
+      # shared lookups and immediate cancellation observable in the demo.
+      ANNOTATION_SOURCE_DELAY_SECONDS: "${ANNOTATION_SOURCE_DELAY_SECONDS:-1.0}"
+      ANNOTATION_DATA_DIR: /data
+      ANNOTATION_REFERENCE_FILE: human_gene_annotation.GRCh38.tsv
+    expose:
+      - "8001"
+    ports:
+      - "${ANNOTATION_SOURCE_PORT:-8001}:8001"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/healthz', timeout=2).read()"
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  merge-api:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    environment:
+      ANNOTATION_BASE_URL: http://annotation-source:8001
+      ANNOTATION_TIMEOUT_SECONDS: "${ANNOTATION_TIMEOUT_SECONDS:-30}"
+      PER_RUN_CONCURRENCY: "${PER_RUN_CONCURRENCY:-8}"
+      MAX_UPLOAD_BYTES: "${MAX_UPLOAD_BYTES:-33554432}"
+      MAX_RETAINED_RUNS: "${MAX_RETAINED_RUNS:-1000}"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      annotation-source:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2).read()"
+      interval: 5s
+      timeout: 3s
+      retries: 12

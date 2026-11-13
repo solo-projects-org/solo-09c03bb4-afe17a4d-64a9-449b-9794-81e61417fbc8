@@ -1,0 +1,27 @@
+# Development overlay: bind-mount source and enable uvicorn auto-reload.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+services:
+  annotation-source:
+    volumes:
+      - ./data:/data:ro
+      - ./annotation_source:/srv/annotation_source:ro
+    command:
+      - uvicorn
+      - annotation_source.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8001"
+      - --reload
+
+  merge-api:
+    volumes:
+      - ./app:/srv/app:ro
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --reload
